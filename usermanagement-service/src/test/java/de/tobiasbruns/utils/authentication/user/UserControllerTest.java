@@ -4,7 +4,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,45 +87,40 @@ public class UserControllerTest {
 	@Test
 	@WithMockUser(username = "theo")
 	public void changOwnPassword() throws Exception {
-		mockMvc.perform(patch("/users/" + THEOS_ID).content(String.format(USER_JSON_TEMPL, "theo", "newpwd")).contentType(MediaType.APPLICATION_JSON))
+		mockMvc.perform(patch("/users/" + THEOS_ID)//
+				.content(String.format(USER_JSON_TEMPL, "theo", "newpwd")).contentType(MediaType.APPLICATION_JSON))//
 				.andExpect(status().is2xxSuccessful());
 	}
 
 	@Test
 	@WithMockUser(username = "theo")
 	public void changeOtherUserPassword() throws Exception {
-		mockMvc.perform(put("/users/" + ADMINS_ID).content(String.format(USER_JSON_TEMPL, "admin", "newpwd")).contentType(MediaType.APPLICATION_JSON))
+		mockMvc.perform(put("/users/" + ADMINS_ID)//
+				.content(String.format(USER_JSON_TEMPL, "admin", "newpwd")).contentType(MediaType.APPLICATION_JSON))//
 				.andExpect(status().isForbidden());
 	}
 
 	@Test
 	@WithMockUser(username = "theo")
 	public void makeMeAdmin() throws Exception {
-		mockMvc.perform(put("/users/" + THEOS_ID + "/authorities").content("http://localhost:8080/userAuthorities/ROLE_ADMIN").contentType("text/uri-list"))
+		mockMvc.perform(put("/users/" + THEOS_ID + "/authorities")//
+				.content("http://localhost:8080/userAuthorities/ROLE_ADMIN").contentType("text/uri-list"))//
 				.andExpect(status().isForbidden());
 	}
 
 	@Test
 	@WithMockUser(username = "admin", roles = { "ADMIN", "USER" })
 	public void adminMakesTheoAdmin() throws Exception {
-		mockMvc.perform(put("/users/" + THEOS_ID + "/authorities").content("http://localhost:8080/userAuthorities/ROLE_ADMIN").contentType("text/uri-list"))
+		mockMvc.perform(put("/users/" + THEOS_ID + "/authorities")//
+				.content("http://localhost:8080/userAuthorities/ROLE_ADMIN").contentType("text/uri-list"))//
 				.andExpect(status().is2xxSuccessful());
-	}
-
-	@Ignore("Field based permissions not jet implemented")
-	@Test
-	@WithMockUser(username = "theo")
-	public void selfDisableForbidden() throws Exception {
-		mockMvc.perform(patch("/users/" + THEOS_ID)//
-				.content("{\"enabled\":false}")//
-				.contentType(MediaType.APPLICATION_JSON))//
-				.andExpect(status().isForbidden());
 	}
 
 	@Test
 	@WithMockUser(username = "admin", roles = { "ADMIN", "USER" })
 	public void disabledByAdmin() throws Exception {
-		mockMvc.perform(patch("/users/" + THEOS_ID).content("{\"enabled\":false}").contentType(MediaType.APPLICATION_JSON))
+		mockMvc.perform(patch("/users/" + THEOS_ID)//
+				.content("{\"enabled\":false}").contentType(MediaType.APPLICATION_JSON))//
 				.andExpect(status().is2xxSuccessful());
 	}
 }

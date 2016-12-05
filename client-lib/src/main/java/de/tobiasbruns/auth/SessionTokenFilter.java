@@ -1,27 +1,22 @@
-/*
- * Copyright 2016 the original author or authors.
+/**
+ * Copyright (c) 2016, Tobias Bruns
+ * All rights reserved.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package de.tobiasbruns.auth;
 
-
-import io.jsonwebtoken.ExpiredJwtException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
-import org.springframework.stereotype.Component;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.FilterChain;
@@ -30,61 +25,63 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.util.Optional;
-import java.util.function.Predicate;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.web.authentication.preauth.AbstractPreAuthenticatedProcessingFilter;
+import org.springframework.stereotype.Component;
+
+import io.jsonwebtoken.ExpiredJwtException;
 
 @Component
 public class SessionTokenFilter extends AbstractPreAuthenticatedProcessingFilter {
 
-    static final String TOKEN_HEADER = "X-Auth-Token";
+	static final String TOKEN_HEADER = "X-Auth-Token";
 
-    @Autowired
-    private ClientAuthenticationService authService;
-    @Autowired
-    private AuthenticationManager authManager;
+	@Autowired
+	private ClientAuthenticationService authService;
+	@Autowired
+	private AuthenticationManager authManager;
 
-    private static final Predicate<Integer> HTTP_STATUS_IS_OK = httpStatus -> httpStatus >= 200 && httpStatus < 300;
+	private static final Predicate<Integer> HTTP_STATUS_IS_OK = httpStatus -> httpStatus >= 200 && httpStatus < 300;
 
-    @PostConstruct
-    void initBean() {
-        super.setAuthenticationManager(authManager);
-    }
+	@PostConstruct
+	void initBean() {
+		super.setAuthenticationManager(authManager);
+	}
 
-    @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-//        refreshToken((HttpServletRequest) request, (HttpServletResponse) response);
-        super.doFilter(request, response, chain);
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+		// refreshToken((HttpServletRequest) request, (HttpServletResponse)
+		// response);
+		super.doFilter(request, response, chain);
 
-    }
+	}
 
-    void refreshToken(HttpServletRequest request, HttpServletResponse response) {
-        getTokenFromRequest((HttpServletRequest) request).ifPresent(token -> {
-            if (HTTP_STATUS_IS_OK.test(response.getStatus())) {
-                response.setHeader(TOKEN_HEADER, authService.refreshToken(token).getToken());
-            }
-        });
-    }
+	void refreshToken(HttpServletRequest request, HttpServletResponse response) {
+		getTokenFromRequest((HttpServletRequest) request).ifPresent(token -> {
+			if (HTTP_STATUS_IS_OK.test(response.getStatus())) {
+				response.setHeader(TOKEN_HEADER, authService.refreshToken(token).getToken());
+			}
+		});
+	}
 
-    @Override
-    protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
-        try {
-            return getTokenFromRequest(request).map(token -> authService.getUserFromToken(token).getUsername()).orElse(null);
-        } catch (ExpiredJwtException e) {
-            throw new SessionExpiredException(e);
-        }
-    }
+	@Override
+	protected Object getPreAuthenticatedPrincipal(HttpServletRequest request) {
+		try {
+			return getTokenFromRequest(request).map(token -> authService.getUserFromToken(token).getUsername()).orElse(null);
+		} catch (ExpiredJwtException e) {
+			throw new SessionExpiredException(e);
+		}
+	}
 
+	@Override
+	protected Object getPreAuthenticatedCredentials(HttpServletRequest request) {
+		return getTokenFromRequest(request).orElse("");
+	}
 
-    @Override
-    protected Object getPreAuthenticatedCredentials(HttpServletRequest request) {
-        return getTokenFromRequest(request).orElse("");
-    }
-
-
-    private Optional<String> getTokenFromRequest(HttpServletRequest request) {
-        return Optional.ofNullable(request.getHeader(TOKEN_HEADER));
-    }
-
+	private Optional<String> getTokenFromRequest(HttpServletRequest request) {
+		return Optional.ofNullable(request.getHeader(TOKEN_HEADER));
+	}
 
 }

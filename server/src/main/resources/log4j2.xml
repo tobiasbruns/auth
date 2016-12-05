@@ -7,12 +7,12 @@
     </Appenders>
     <Loggers>
 
-        <Logger name="org.springframework.web" level="INFO"/>
-        <Logger name="org.springframework.context" level="WARN"/>
-        <Logger name="org.springframework.security" level="WARN"/>
+        <Logger name="org.springframework.web" level="DEBUG"/>
+        <Logger name="org.springframework.context" level="DEBUG"/>
+        <Logger name="org.springframework.security" level="DEBUG"/>
 
 
-        <Logger name="de.tobiasbruns" level="INFO"/>
+        <Logger name="de.tobiasbruns" level="DEBUG"/>
 
         <Root level="WARN">
             <AppenderRef ref="Console"/>
